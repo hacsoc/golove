@@ -89,7 +89,7 @@ func (l *Love) UnmarshalJSON(b []byte) error {
 	}
 
 	var err error
-	l.Timestamp, err = time.Parse(time.RFC3339, timestamp)
+	l.Timestamp, err = time.Parse("2006-01-02T15:04:05", timestamp)
 	if err != nil {
 		return errors.New("invalid timestamp encoding")
 	}
