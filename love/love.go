@@ -191,15 +191,12 @@ func (c *Client) SendLove(from string, to string, message string) error {
 	var err error
 	var resp *http.Response
 	finalUrl := c.BaseUrl + "/love"
-	contentType := "application-x-www-form-urlencoded"
 	values := make(url.Values)
 	values.Set("api_key", c.ApiKey)
 	values.Set("sender", from)
 	values.Set("recipient", to)
 	values.Set("message", message)
-	body := values.Encode()
-	bodyReader := strings.NewReader(body)
-	if resp, err = http.Post(finalUrl, contentType, bodyReader); err != nil {
+	if resp, err = http.PostForm(finalUrl, values); err != nil {
 		return err
 	}
 	if resp.StatusCode != LoveCreatedStatusCode {
