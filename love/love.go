@@ -1,7 +1,11 @@
 /*
-The love package contains a client library for the Yelp Love API. Refer to Yelp
-Love's Readme for information on Yelp Love, including the API and how to set up
-an instance: https://github.com/Yelp/love/#api
+A client library for the Yelp Love API. Refer to Yelp Love's Readme for
+information on Yelp Love, including the API and how to set up an instance:
+https://github.com/Yelp/love/#api
+
+In order to use the Yelp Love client library, you must have an API key. In order
+to have an API token, you need to have administrator access to the application.
+The API tokens allow you to send love from any user to any user.
 */
 package love
 
