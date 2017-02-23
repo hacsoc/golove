@@ -202,7 +202,7 @@ func TestGetLoveNon200(t *testing.T) {
 
 	httpmock.RegisterResponder(
 		"GET", testLoveUrl,
-		httpmock.NewStringResponder(LoveBadParamsStatusCode, "message"),
+		httpmock.NewStringResponder(loveBadParamsStatusCode, "message"),
 	)
 
 	loves, err := client.GetLove("hammy", "", 0)

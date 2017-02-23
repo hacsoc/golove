@@ -42,10 +42,10 @@ API Overview
 	    - value: "username"
 */
 
-const LoveGetStatusCode = 200
-const LoveCreatedStatusCode = 201
-const LoveFailedStatusCode = 418
-const LoveBadParamsStatusCode = 422
+const loveGetStatusCode = 200
+const loveCreatedStatusCode = 201
+const loveFailedStatusCode = 418
+const loveBadParamsStatusCode = 422
 
 /*
 The Client holds necessary state for creating requests to the Yelp Love API.
@@ -203,7 +203,7 @@ func (c *Client) SendLove(from string, to string, message string) error {
 	if resp, err = http.PostForm(finalUrl, values); err != nil {
 		return err
 	}
-	if resp.StatusCode != LoveCreatedStatusCode {
+	if resp.StatusCode != loveCreatedStatusCode {
 		return errors.New(resp.Status)
 	}
 	return nil
@@ -233,7 +233,7 @@ func (c *Client) Autocomplete(term string) ([]User, error) {
 	if resp, err = http.Get(finalUrl); err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != LoveGetStatusCode {
+	if resp.StatusCode != loveGetStatusCode {
 		return nil, errors.New(resp.Status)
 	}
 	defer resp.Body.Close()
