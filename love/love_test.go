@@ -3,6 +3,7 @@ package love
 import "gopkg.in/jarcoal/httpmock.v1"
 import "testing"
 import "github.com/stretchr/testify/assert"
+import "io/ioutil"
 import "net/http"
 import "net/url"
 import "time"
@@ -10,6 +11,7 @@ import "time"
 const testApiKey = "abcdefg"
 const testBaseUrl = "https://example.com/api"
 const testLoveUrl = testBaseUrl + "/love"
+const testAutocompleteUrl = testBaseUrl + "/autocomplete"
 const singleGetLoveResponse = `[{
 "timestamp": "2000-01-01T01:01:01.552636",
 "message": "message",
@@ -43,6 +45,22 @@ func newGetValidateResponder(t *testing.T, code int, response string,
 	params map[string]string) func(*http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		validateParams(t, req.URL.Query(), params)
+		return httpmock.NewStringResponse(code, response), nil
+	}
+}
+
+func newPostValidateResponder(t *testing.T, code int, response string,
+	params map[string]string) func(*http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		values, err := url.ParseQuery(string(body))
+		if err != nil {
+			t.Error(err)
+		}
+		validateParams(t, values, params)
 		return httpmock.NewStringResponse(code, response), nil
 	}
 }
@@ -190,4 +208,163 @@ func TestGetLoveNon200(t *testing.T) {
 	loves, err := client.GetLove("hammy", "", 0)
 	assert.NotNil(t, err)
 	assert.Nil(t, loves)
+}
+
+func TestSendLoveSingle(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key":   testApiKey,
+		"sender":    "hammy",
+		"recipient": "darwin",
+		"message":   "message",
+	}
+
+	httpmock.RegisterResponder(
+		"POST", testLoveUrl,
+		newPostValidateResponder(t, 201, "Love sent to darwin!", params),
+	)
+
+	err := client.SendLove("hammy", "darwin", "message")
+	assert.Nil(t, err)
+}
+
+func TestSendLoveMultiple(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key":   testApiKey,
+		"sender":    "hammy",
+		"recipient": "darwin,jeremy",
+		"message":   "message",
+	}
+
+	httpmock.RegisterResponder(
+		"POST", testLoveUrl,
+		newPostValidateResponder(t, 201, "Love sent to darwin,jeremy!", params),
+	)
+
+	err := client.SendLove("hammy", "darwin,jeremy", "message")
+	assert.Nil(t, err)
+}
+
+func TestSendLovesSingle(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key":   testApiKey,
+		"sender":    "hammy",
+		"recipient": "darwin",
+		"message":   "message",
+	}
+
+	httpmock.RegisterResponder(
+		"POST", testLoveUrl,
+		newPostValidateResponder(t, 201, "Love sent to darwin!", params),
+	)
+
+	err := client.SendLoves("hammy", []string{"darwin"}, "message")
+	assert.Nil(t, err)
+}
+
+func TestSendLovesMultiple(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key":   testApiKey,
+		"sender":    "hammy",
+		"recipient": "darwin,jeremy",
+		"message":   "message",
+	}
+
+	httpmock.RegisterResponder(
+		"POST", testLoveUrl,
+		newPostValidateResponder(t, 201, "Love sent to darwin,jeremy!", params),
+	)
+
+	err := client.SendLoves("hammy", []string{"darwin", "jeremy"}, "message")
+	assert.Nil(t, err)
+}
+
+func TestSendLoveNon201(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+
+	httpmock.RegisterResponder(
+		"POST", testLoveUrl,
+		httpmock.NewStringResponder(418, "i'm a litle teapot"),
+	)
+
+	err := client.SendLoves("hammy", []string{"darwin", "jeremy"}, "message")
+	assert.NotNil(t, err)
+}
+
+func TestAutocompleteEmpty(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key": testApiKey,
+		"term":    "ha",
+	}
+
+	httpmock.RegisterResponder(
+		"GET", testAutocompleteUrl,
+		newGetValidateResponder(t, 200, "[]", params),
+	)
+
+	users, err := client.Autocomplete("ha")
+	assert.Nil(t, err)
+	assert.Equal(t, len(users), 0)
+}
+
+func TestAutocompleteOne(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	params := map[string]string{
+		"api_key": testApiKey,
+		"term":    "ha",
+	}
+	response := `[{"label": "label", "value": "value"}]`
+
+	httpmock.RegisterResponder(
+		"GET", testAutocompleteUrl,
+		newGetValidateResponder(t, 200, response, params),
+	)
+
+	users, err := client.Autocomplete("ha")
+	assert.Nil(t, err)
+	assert.Equal(t, len(users), 1)
+	assert.Equal(t, users[0].Display, "label")
+	assert.Equal(t, users[0].Username, "value")
+}
+
+func TestAutocompleteNon200(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	client := getTestClient()
+	response := `you suck`
+
+	httpmock.RegisterResponder(
+		"GET", testAutocompleteUrl,
+		httpmock.NewStringResponder(418, response),
+	)
+
+	users, err := client.Autocomplete("ha")
+	assert.NotNil(t, err)
+	assert.Nil(t, users)
 }
