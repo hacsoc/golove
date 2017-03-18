@@ -11,6 +11,7 @@ package love
 
 import "encoding/json"
 import "errors"
+import "fmt"
 import "io/ioutil"
 import "net/http"
 import "net/url"
@@ -204,7 +205,7 @@ func (c *Client) SendLove(from string, to string, message string) error {
 		return err
 	}
 	if resp.StatusCode != loveCreatedStatusCode {
-		return errors.New(resp.Status)
+		return fmt.Errorf("Love API Error: %s", resp.Status)
 	}
 	return nil
 }
