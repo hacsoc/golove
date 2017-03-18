@@ -205,7 +205,12 @@ func (c *Client) SendLove(from string, to string, message string) error {
 		return err
 	}
 	if resp.StatusCode != loveCreatedStatusCode {
-		return fmt.Errorf("Love API Error: %s", resp.Status)
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err // who knows what error this could be
+		}
+		return fmt.Errorf("Love API Error: %s", body)
 	}
 	return nil
 }
